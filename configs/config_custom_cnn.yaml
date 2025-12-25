@@ -1,0 +1,68 @@
+experiment:
+  name: custom_cnn_baseline
+  seed: 7
+
+dataset:
+  class_names: ["ALGAL_LEAF_SPOT", "ALLOCARIDARA_ATTACK", "HEALTHY_LEAF", "LEAF_BLIGHT", "PHOMOPSIS_LEAF_SPOT"]
+  train_dir: data/processed/train
+  val_dir: data/processed/val
+  test_dir: data/processed/test
+  image_size: 196
+  num_workers: 4
+  pin_memory: true
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+augmentation:
+  rotation: 20
+  horizontal_flip: true
+  vertical_flip: false
+  brightness: 0.1
+  contrast: 0.1
+  saturation: 0.1
+  hue: 0.02
+  pad_if_needed: true
+  use_center_crop: false
+  center_crop_pct: 0.9
+  use_tight_crop: false
+  tight_crop_scale: [0.9, 1.0]
+  tight_crop_ratio: [0.9, 1.1]
+  crop_margin_pct: 0.0
+  blur_prob: 0.05
+
+model:
+  name: custom_cnn
+  in_channels: 3
+  conv_filters: [32, 64, 128, 256]
+  dropout: 0.4
+  fc_units: 512
+  checkpoint_dir: models/checkpoints/custom_cnn
+
+training:
+  batch_size: 48
+  num_epochs: 40
+  optimizer: adam
+  learning_rate: 0.0005
+  weight_decay: 0.00005
+  momentum: 0.9
+  label_smoothing: 0.0
+  gradient_clip: 1.0
+  mixed_precision: false
+
+scheduler:
+  name: step
+  step_size: 10
+  gamma: 0.5
+
+early_stopping:
+  patience: 8
+  monitor: val_loss
+  min_delta: 0.0005
+
+logging:
+  log_dir: results/custom_cnn/logs
+  metrics_dir: results/custom_cnn/metrics
+  plots_dir: results/custom_cnn/plots
+  tensorboard_dir: results/custom_cnn/tensorboard
+
+

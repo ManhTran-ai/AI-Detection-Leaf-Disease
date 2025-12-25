@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Durian Leaf Disease Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<section class="container">
+    <h1>Durian Leaf Disease Detection</h1>
+    {% if error %}
+        <div class="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+        <label for="image">Upload leaf image</label>
+        <input type="file" id="image" name="image" accept="image/*" required>
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if image_url %}
+        <div class="preview">
+            <img src="{{ image_url }}" alt="Uploaded leaf">
+        </div>
+    {% endif %}
+
+    {% if prediction %}
+        <div class="results">
+            <h2>Prediction</h2>
+            <p>Class: <strong>{{ prediction.class }}</strong></p>
+            <p>Confidence: {{ (prediction.confidence * 100) | round(2) }}%</p>
+            <table>
+                <thead><tr><th>Class</th><th>Probability</th></tr></thead>
+                <tbody>
+                {% for cls, prob in prediction.probabilities.items() %}
+                    <tr>
+                        <td>{{ cls }}</td>
+                        <td>{{ (prob * 100) | round(2) }}%</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</section>
+</body>
+</html>
+
+

@@ -1,0 +1,66 @@
+experiment:
+  name: resnet50_high_accuracy
+  seed: 42
+
+dataset:
+  class_names: ["ALGAL_LEAF_SPOT", "ALLOCARIDARA_ATTACK", "HEALTHY_LEAF", "LEAF_BLIGHT", "PHOMOPSIS_LEAF_SPOT"]
+  train_dir: data/processed/train
+  val_dir: data/processed/val
+  test_dir: data/processed/test
+  image_size: 256
+  num_workers: 6
+  pin_memory: true
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+augmentation:
+  rotation: 35
+  horizontal_flip: true
+  vertical_flip: true
+  brightness: 0.25
+  contrast: 0.25
+  saturation: 0.2
+  hue: 0.04
+  pad_if_needed: true
+  use_center_crop: false
+  center_crop_pct: 0.9
+  use_tight_crop: false
+  tight_crop_scale: [0.9, 1.0]
+  tight_crop_ratio: [0.9, 1.1]
+  crop_margin_pct: 0.0
+  blur_prob: 0.2
+
+model:
+  name: resnet50
+  pretrained: true
+  dropout: 0.4
+  checkpoint_dir: models/checkpoints/resnet50
+
+training:
+  batch_size: 24
+  num_epochs: 65
+  optimizer: adamw
+  learning_rate: 0.0002
+  weight_decay: 0.0001
+  momentum: 0.9
+  label_smoothing: 0.05
+  gradient_clip: 1.0
+  mixed_precision: true
+
+scheduler:
+  name: cosine
+  warmup_epochs: 5
+  min_lr: 0.0000003
+
+early_stopping:
+  patience: 15
+  monitor: val_loss
+  min_delta: 0.0003
+
+logging:
+  log_dir: results/resnet50/logs
+  metrics_dir: results/resnet50/metrics
+  plots_dir: results/resnet50/plots
+  tensorboard_dir: results/resnet50/tensorboard
+
+

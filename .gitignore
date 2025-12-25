@@ -1,0 +1,141 @@
+# ==========================================
+# PYTHON
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+env/
+venv/
+ENV/
+.venv/
+
+# Build/Distribution
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ==========================================
+# IDE / EDITOR
+# ==========================================
+# PyCharm
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# ==========================================
+# DATA FILES (Dữ liệu ảnh - KHÔNG push)
+# ==========================================
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Data file formats
+*.csv
+*.xlsx
+*.zip
+*.tar.gz
+*.rar
+
+# Image files trong data
+data/**/*.jpg
+data/**/*.jpeg
+data/**/*.png
+data/**/*.gif
+data/**/*.bmp
+
+# ==========================================
+# MODEL FILES (File model quá lớn - KHÔNG push)
+# ==========================================
+# Checkpoint files
+models/checkpoints/**/*.pth
+models/checkpoints/**/*.pt
+models/checkpoints/**/*.ckpt
+!models/checkpoints/**/.gitkeep
+
+# Pretrained models
+models/pretrained/*.pth
+models/pretrained/*.pt
+!models/pretrained/.gitkeep
+
+# Other model formats
+*.onnx
+*.pb
+*.h5
+*.keras
+*.tflite
+
+# ==========================================
+# RESULTS & OUTPUTS
+# ==========================================
+# Log files
+results/*/logs/*.log
+*.log
+
+# TensorBoard events (có thể rất lớn)
+results/*/tensorboard/
+**/events.out.tfevents.*
+
+# Output files
+outputs/*
+!outputs/.gitkeep
+
+# Grad-CAM outputs
+outputs/grad_cam_outputs/*
+!outputs/grad_cam_outputs/.gitkeep
+
+# Prediction outputs
+outputs/predictions/*
+outputs/demo_results/*
+
+# ==========================================
+# OS SPECIFIC
+# ==========================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+desktop.ini
+ehthumbs.db
+
+# ==========================================
+# TEMPORARY FILES
+# ==========================================
+*.tmp
+*.bak
+*.cache
+*.temp
+
+# ==========================================
+# SECRETS / CONFIG (nếu có)
+# ==========================================
+.env
+.env.local
+*.key
+secrets.yaml
+config.local.yaml

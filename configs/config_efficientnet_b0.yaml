@@ -1,0 +1,76 @@
+experiment:
+  name: efficientnet_b0_baseline
+  seed: 42
+
+dataset:
+  class_names: ["ALGAL_LEAF_SPOT", "ALLOCARIDARA_ATTACK", "HEALTHY_LEAF", "LEAF_BLIGHT", "PHOMOPSIS_LEAF_SPOT"]
+  train_dir: data/processed/train
+  val_dir: data/processed/val
+  test_dir: data/processed/test
+  image_size: 224
+  num_workers: 4
+  pin_memory: true
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+augmentation:
+  # AutoAugment settings
+  auto_augment: "rand"  # Options: "imagenet", "rand", "trivial", null
+  rand_augment_n: 2     # Number of operations for RandAugment
+  rand_augment_m: 9     # Magnitude for RandAugment (0-10)
+  auto_augment_p: 1.0   # Probability of applying AutoAugment
+
+  # Traditional augmentations (applied after AutoAugment)
+  rotation: 20
+  horizontal_flip: true
+  vertical_flip: false
+  brightness: 0.1
+  contrast: 0.1
+  saturation: 0.1
+  hue: 0.02
+  pad_if_needed: true
+  use_center_crop: false
+  center_crop_pct: 0.9
+  use_tight_crop: false
+  tight_crop_scale: [0.85, 1.0]
+  tight_crop_ratio: [0.9, 1.1]
+  crop_margin_pct: 0.0
+  blur_prob: 0.05
+
+model:
+  name: efficientnet_b0
+  pretrained: true
+  dropout: 0.3
+  checkpoint_dir: models/checkpoints/efficientnet_b0
+
+  # Fine-tuning settings
+  freeze_backbone: false
+  unfreeze_from_block: 5  # EfficientNet-B0 has 9 blocks (0-8), unfreeze from block 5 onwards
+
+training:
+  batch_size: 32
+  num_epochs: 50
+  optimizer: adamw
+  learning_rate: 0.0001   # Lower LR for fine-tuning
+  weight_decay: 0.00001   # Light regularization
+  momentum: 0.9
+  label_smoothing: 0.1
+  gradient_clip: 1.0
+  mixed_precision: false
+
+scheduler:
+  name: cosine
+  warmup_epochs: 3
+  min_lr: 0.0000001
+
+early_stopping:
+  patience: 12
+  monitor: val_loss
+  min_delta: 0.0005
+
+logging:
+  log_dir: results/efficientnet_b0/logs
+  metrics_dir: results/efficientnet_b0/metrics
+  plots_dir: results/efficientnet_b0/plots
+  tensorboard_dir: results/efficientnet_b0/tensorboard
+

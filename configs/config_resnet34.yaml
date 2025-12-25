@@ -1,0 +1,66 @@
+experiment:
+  name: resnet34_advanced
+  seed: 42
+
+dataset:
+  class_names: ["ALGAL_LEAF_SPOT", "ALLOCARIDARA_ATTACK", "HEALTHY_LEAF", "LEAF_BLIGHT", "PHOMOPSIS_LEAF_SPOT"]
+  train_dir: data/processed/train
+  val_dir: data/processed/val
+  test_dir: data/processed/test
+  image_size: 224
+  num_workers: 4
+  pin_memory: true
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+augmentation:
+  rotation: 30
+  horizontal_flip: true
+  vertical_flip: true
+  brightness: 0.2
+  contrast: 0.2
+  saturation: 0.15
+  hue: 0.03
+  pad_if_needed: true
+  use_center_crop: false
+  center_crop_pct: 0.9
+  use_tight_crop: false
+  tight_crop_scale: [0.9, 1.0]
+  tight_crop_ratio: [0.9, 1.1]
+  crop_margin_pct: 0.0
+  blur_prob: 0.15
+
+model:
+  name: resnet34
+  pretrained: true
+  dropout: 0.35
+  checkpoint_dir: models/checkpoints/resnet34
+
+training:
+  batch_size: 28
+  num_epochs: 60
+  optimizer: adamw
+  learning_rate: 0.00025
+  weight_decay: 0.0001
+  momentum: 0.9
+  label_smoothing: 0.0
+  gradient_clip: 1.0
+  mixed_precision: false
+
+scheduler:
+  name: cosine
+  warmup_epochs: 3
+  min_lr: 0.0000005
+
+early_stopping:
+  patience: 12
+  monitor: val_loss
+  min_delta: 0.0005
+
+logging:
+  log_dir: results/resnet34/logs
+  metrics_dir: results/resnet34/metrics
+  plots_dir: results/resnet34/plots
+  tensorboard_dir: results/resnet34/tensorboard
+
+
