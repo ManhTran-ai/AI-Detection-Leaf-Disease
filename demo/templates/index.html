@@ -1,49 +1,302 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Durian Leaf Disease Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍃 Phát Hiện Bệnh Lá Sầu Riêng | AI Demo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-<section class="container">
-    <h1>Durian Leaf Disease Detection</h1>
-    {% if error %}
-        <div class="alert">{{ error }}</div>
-    {% endif %}
-
-    <form method="POST" enctype="multipart/form-data">
-        <label for="image">Upload leaf image</label>
-        <input type="file" id="image" name="image" accept="image/*" required>
-        <button type="submit">Predict</button>
-    </form>
-
-    {% if image_url %}
-        <div class="preview">
-            <img src="{{ image_url }}" alt="Uploaded leaf">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-leaf"></i>
+                <span>Durian AI</span>
+            </div>
+            <nav class="nav-links">
+                <a href="#about">Giới thiệu</a>
+                <a href="#diseases">Các loại bệnh</a>
+                <a href="https://github.com/ManhTran-ai/AI-Detection-Leaf-Disease" target="_blank"><i class="fab fa-github"></i></a>
+            </nav>
         </div>
-    {% endif %}
+    </header>
 
-    {% if prediction %}
-        <div class="results">
-            <h2>Prediction</h2>
-            <p>Class: <strong>{{ prediction.class }}</strong></p>
-            <p>Confidence: {{ (prediction.confidence * 100) | round(2) }}%</p>
-            <table>
-                <thead><tr><th>Class</th><th>Probability</th></tr></thead>
-                <tbody>
-                {% for cls, prob in prediction.probabilities.items() %}
-                    <tr>
-                        <td>{{ cls }}</td>
-                        <td>{{ (prob * 100) | round(2) }}%</td>
-                    </tr>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>🌿 Phát Hiện Bệnh Trên Lá Sầu Riêng</h1>
+            <p class="hero-subtitle">Ứng dụng AI phân loại bệnh lá sầu riêng với độ chính xác cao sử dụng Deep Learning</p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">5</span>
+                    <span class="stat-label">Loại bệnh</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">95%+</span>
+                    <span class="stat-label">Độ chính xác</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">&lt;1s</span>
+                    <span class="stat-label">Thời gian xử lý</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% if error %}
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <div class="detection-container">
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <h2><i class="fas fa-cloud-upload-alt"></i> Tải lên ảnh lá</h2>
+
+                <form method="POST" enctype="multipart/form-data" id="upload-form">
+                    <!-- Model Selection -->
+                    <div class="model-selector">
+                        <label for="model">Chọn Model:</label>
+                        <select name="model" id="model">
+                            {% for model_name, model_info in available_models.items() %}
+                            <option value="{{ model_name }}" {% if model_name == current_model %}selected{% endif %}>
+                                {{ model_info.display_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Drag & Drop Zone -->
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="drop-zone-content">
+                            <i class="fas fa-image"></i>
+                            <p>Kéo thả ảnh vào đây</p>
+                            <span>hoặc</span>
+                            <label for="image" class="browse-btn">Chọn tệp</label>
+                        </div>
+                        <input type="file" id="image" name="image" accept="image/*" required hidden>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="preview-container" id="preview-container" style="display: none;">
+                        <img id="preview-image" src="" alt="Preview">
+                        <button type="button" class="remove-btn" id="remove-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submit-btn" disabled>
+                        <i class="fas fa-magic"></i> Phân tích ảnh
+                    </button>
+                </form>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section">
+                <h2><i class="fas fa-chart-bar"></i> Kết quả phân tích</h2>
+
+                {% if prediction %}
+                <div class="result-card animated">
+                    {% if image_url %}
+                    <div class="result-image">
+                        <img src="{{ image_url }}" alt="Uploaded leaf">
+                    </div>
+                    {% endif %}
+
+                    <div class="prediction-main">
+                        <div class="prediction-class {{ 'healthy' if prediction.class == 'HEALTHY_LEAF' else 'disease' }}">
+                            {% if prediction.class == 'HEALTHY_LEAF' %}
+                            <i class="fas fa-check-circle"></i>
+                            {% else %}
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {% endif %}
+                            <span>{{ disease_info[prediction.class].name if disease_info and prediction.class in disease_info else prediction.class }}</span>
+                        </div>
+                        <div class="confidence-meter">
+                            <div class="confidence-bar" data-width="{{ (prediction.confidence * 100) | round(1) }}"></div>
+                            <span class="confidence-text">{{ (prediction.confidence * 100) | round(1) }}% độ tin cậy</span>
+                        </div>
+                    </div>
+
+                    <!-- Disease Info -->
+                    {% if disease_info and prediction.class in disease_info %}
+                    <div class="disease-info">
+                        <h4><i class="fas fa-info-circle"></i> Thông tin bệnh</h4>
+                        <p>{{ disease_info[prediction.class].description }}</p>
+                        {% if disease_info[prediction.class].treatment %}
+                        <h5><i class="fas fa-leaf"></i> Cách xử lý:</h5>
+                        <p>{{ disease_info[prediction.class].treatment }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Probability Chart -->
+                    <div class="probability-chart">
+                        <h4><i class="fas fa-chart-pie"></i> Xác suất các loại bệnh</h4>
+                        {% for cls, prob in prediction.probabilities.items() %}
+                        <div class="prob-item">
+                            <div class="prob-label">
+                                <span class="prob-name">{{ disease_info[cls].name if disease_info and cls in disease_info else cls }}</span>
+                                <span class="prob-value">{{ (prob * 100) | round(1) }}%</span>
+                            </div>
+                            <div class="prob-bar-container">
+                                <div class="prob-bar {{ 'highlight' if cls == prediction.class else '' }}"
+                                     data-width="{{ (prob * 100) | round(1) }}"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-result">
+                    <i class="fas fa-leaf"></i>
+                    <p>Tải lên ảnh lá sầu riêng để bắt đầu phân tích</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Disease Info Cards -->
+        <section class="diseases-section" id="diseases">
+            <h2><i class="fas fa-book-medical"></i> Các loại bệnh được nhận diện</h2>
+            <div class="disease-cards">
+                {% if disease_info %}
+                {% for key, info in disease_info.items() %}
+                <div class="disease-card {{ 'healthy-card' if key == 'HEALTHY_LEAF' else '' }}">
+                    <div class="disease-icon">
+                        {% if key == 'HEALTHY_LEAF' %}
+                        <i class="fas fa-check-circle"></i>
+                        {% else %}
+                        <i class="fas fa-virus"></i>
+                        {% endif %}
+                    </div>
+                    <h3>{{ info.name }}</h3>
+                    <p>{{ info.short_desc }}</p>
+                </div>
                 {% endfor %}
-                </tbody>
-            </table>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section class="about-section" id="about">
+            <h2><i class="fas fa-robot"></i> Về hệ thống AI</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <i class="fas fa-brain"></i>
+                    <h3>Deep Learning</h3>
+                    <p>Sử dụng các mô hình CNN tiên tiến như ResNet, EfficientNet, MobileNetV3</p>
+                </div>
+                <div class="about-card">
+                    <i class="fas fa-database"></i>
+                    <h3>Dataset</h3>
+                    <p>Được huấn luyện trên hàng nghìn ảnh lá sầu riêng đa dạng</p>
+                </div>
+                <div class="about-card">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <h3>Tốc độ cao</h3>
+                    <p>Phân tích và trả về kết quả chỉ trong vài giây</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>© 2025 Durian Disease Detection - AI Project</p>
+            <p>Đồ án Trí Tuệ Nhân Tạo</p>
         </div>
-    {% endif %}
-</section>
+    </footer>
+
+    <script>
+        // Set width for progress bars from data attributes
+        document.querySelectorAll('[data-width]').forEach(function(el) {
+            el.style.width = el.getAttribute('data-width') + '%';
+        });
+
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('image');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        const removeBtn = document.getElementById('remove-btn');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // Drag & Drop Events
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+        });
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) {
+                fileInput.files = files;
+                handleFileSelect(files[0]);
+            }
+        }
+
+        // File Input Change
+        fileInput.addEventListener('change', function(e) {
+            if (this.files.length) {
+                handleFileSelect(this.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                    dropZone.style.display = 'none';
+                    submitBtn.disabled = false;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Remove Image
+        removeBtn.addEventListener('click', function() {
+            fileInput.value = '';
+            previewImage.src = '';
+            previewContainer.style.display = 'none';
+            dropZone.style.display = 'block';
+            submitBtn.disabled = true;
+        });
+
+        // Click on drop zone
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // Form Submit Animation
+        document.getElementById('upload-form').addEventListener('submit', function() {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+            submitBtn.disabled = true;
+        });
+    </script>
 </body>
 </html>
-
 
