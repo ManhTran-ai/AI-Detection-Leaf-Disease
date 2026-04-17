@@ -1,0 +1,81 @@
+# YOLOv8s-Seg Instance Segmentation Configuration
+# Balanced model - good accuracy with reasonable speed
+
+segmentation:
+  # Model
+  model: yolov8s-seg.pt
+  task: segment
+
+  # Data
+  data_yaml: data/seg_yolo/dataset.yaml
+
+  # Training hyperparameters
+  epochs: 100
+  batch: 12
+  imgsz: 640
+  patience: 50
+  save_period: 10
+
+  # Optimizer settings
+  optimizer: AdamW
+  lr0: 0.01
+  lrf: 0.01
+  momentum: 0.937
+  weight_decay: 0.0005
+  warmup_epochs: 3
+  warmup_momentum: 0.8
+  warmup_bias_lr: 0.1
+
+  # Augmentation
+  augmentations:
+    degrees: 15.0
+    translate: 0.1
+    scale: 0.5
+    shear: 0.0
+    perspective: 0.0
+    flipud: 0.0
+    fliplr: 0.5
+    mosaic: 1.0
+    mixup: 0.1
+    copy_paste: 0.1
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    close_mosaic: 10
+
+  # Loss weights
+  box: 7.5
+  cls: 0.5
+  dfl: 1.5
+  seg: 1.0
+
+  # Validation
+  conf: 0.001
+  iou: 0.6
+
+  # Hardware
+  device: 0
+  workers: 4
+  amp: true
+
+  # Output
+  project: results/segmentation
+  name: yolov8s_seg_disease
+  exist_ok: true
+  save: true
+  save_txt: false
+  save_json: false
+  verbose: true
+
+# Class names (5 disease classes)
+nc: 5
+names:
+  0: ALGAL_LEAF_SPOT
+  1: ALLOCARIDARA_ATTACK
+  2: HEALTHY_LEAF
+  3: LEAF_BLIGHT
+  4: PHOMOPSIS_LEAF_SPOT
+
+# RTX 4050 VRAM notes
+# YOLOv8s-seg: ~4.5GB VRAM with batch=12, imgsz=640
+# Reduce batch to 8 if OOM

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍃 Phát Hiện Bệnh Lá Sầu Riêng | AI Demo</title>
+    <title>Phát Hiện Bệnh Lá Sầu Riêng | AI Demo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -27,16 +27,16 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
-            <h1>🌿 Phát Hiện Bệnh Trên Lá Sầu Riêng</h1>
-            <p class="hero-subtitle">Ứng dụng AI phân loại bệnh lá sầu riêng với độ chính xác cao sử dụng Deep Learning</p>
+            <h1>Phát Hiện Bệnh Trên Lá Sầu Riêng</h1>
+            <p class="hero-subtitle">Ứng dụng AI phân loại & phát hiện vị trí bệnh lá sầu riêng với độ chính xác cao</p>
             <div class="hero-stats">
                 <div class="stat-item">
                     <span class="stat-number">5</span>
                     <span class="stat-label">Loại bệnh</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number">95%+</span>
-                    <span class="stat-label">Độ chính xác</span>
+                    <span class="stat-number">2</span>
+                    <span class="stat-label">Chế độ</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number">&lt;1s</span>
@@ -61,16 +61,48 @@
                 <h2><i class="fas fa-cloud-upload-alt"></i> Tải lên ảnh lá</h2>
 
                 <form method="POST" enctype="multipart/form-data" id="upload-form">
-                    <!-- Model Selection -->
-                    <div class="model-selector">
-                        <label for="model">Chọn Model:</label>
-                        <select name="model" id="model">
-                            {% for model_name, model_info in available_models.items() %}
-                            <option value="{{ model_name }}" {% if model_name == current_model %}selected{% endif %}>
-                                {{ model_info.display_name }}
+                    <!-- Mode Toggle -->
+                    <div class="mode-toggle">
+                        <button type="button" class="mode-btn {% if detection_mode == 'classification' %}active{% endif %}" id="mode-classification" onclick="setMode('classification')">
+                            <i class="fas fa-tag"></i> Phân loại
+                        </button>
+                        <button type="button" class="mode-btn {% if detection_mode == 'detection' %}active{% endif %}" id="mode-detection" onclick="setMode('detection')">
+                            <i class="fas fa-bullseye"></i> Phát hiện vị trí
+                        </button>
+                        <input type="hidden" name="mode" id="mode-input" value="{{ detection_mode }}">
+                    </div>
+
+                    <!-- Classification Model Selector -->
+                    <div class="model-selector" id="cls-selector" style="{% if detection_mode == 'detection' %}display:none{% endif %}">
+                        <label for="cls_model">Chọn Model Phân loại:</label>
+                        <select name="cls_model" id="cls_model">
+                            {% for model_name, model_info in available_cls_models.items() %}
+                            <option value="{{ model_name }}" {% if model_name == current_cls_model %}selected{% endif %}>
+                                {{ model_info.display_name }} {{ model_info.status_text }}
                             </option>
                             {% endfor %}
                         </select>
+                    </div>
+
+                    <!-- Detection Model Selector -->
+                    <div class="model-selector" id="det-selector" style="{% if detection_mode == 'classification' %}display:none{% endif %}">
+                        <label for="det_model">Chọn Model Detection:</label>
+                        <select name="det_model" id="det_model">
+                            {% for model_name, model_info in available_det_models.items() %}
+                            <option value="{{ model_name }}" {% if model_name == current_det_model %}selected{% endif %}>
+                                {{ model_info.display_name }} {{ model_info.status_text }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Confidence Threshold (Detection only) -->
+                    <div class="model-selector" id="conf-selector" style="{% if detection_mode == 'classification' %}display:none{% endif %}">
+                        <label for="conf_threshold">Ngưỡng tin cậy (Confidence):</label>
+                        <div class="slider-container">
+                            <input type="range" id="conf_threshold" name="conf_threshold" min="0.05" max="0.9" step="0.05" value="0.25">
+                            <span id="conf-value">0.25</span>
+                        </div>
                     </div>
 
                     <!-- Drag & Drop Zone -->
@@ -102,7 +134,8 @@
             <div class="results-section">
                 <h2><i class="fas fa-chart-bar"></i> Kết quả phân tích</h2>
 
-                {% if prediction %}
+                <!-- Classification Results -->
+                {% if prediction and detection_mode == 'classification' %}
                 <div class="result-card animated">
                     {% if image_url %}
                     <div class="result-image">
@@ -154,10 +187,80 @@
                         {% endfor %}
                     </div>
                 </div>
+
+                <!-- Detection Results -->
+                {% elif detection_result and detection_mode == 'detection' %}
+                <div class="result-card animated">
+                    {% if annotated_image_url %}
+                    <div class="result-image detection-result">
+                        <img src="{{ annotated_image_url }}" alt="Detected diseases with bounding boxes">
+                        <div class="detection-badge">
+                            <i class="fas fa-bullseye"></i> Bounding Boxes
+                        </div>
+                    </div>
+                    {% elif image_url %}
+                    <div class="result-image">
+                        <img src="{{ image_url }}" alt="Uploaded leaf">
+                    </div>
+                    {% endif %}
+
+                    <!-- Detection Summary -->
+                    <div class="detection-summary">
+                        <div class="summary-header">
+                            <i class="fas fa-bullseye"></i>
+                            <h3>Phát hiện {{ detection_result.num_detections }} đối tượng</h3>
+                        </div>
+
+                        {% if detection_result.predictions %}
+                        <div class="detection-list">
+                            {% for pred in detection_result.predictions %}
+                            <div class="detection-item" style="border-left: 4px solid {{ detection_colors[pred.class_name] if pred.class_name in detection_colors else '#888' }}">
+                                <div class="detection-header">
+                                    <span class="detection-class">
+                                        <i class="fas {% if pred.class_name == 'HEALTHY_LEAF' %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %}"></i>
+                                        {{ disease_info[pred.class_name].name if disease_info and pred.class_name in disease_info else pred.class_name }}
+                                    </span>
+                                    <span class="detection-conf">{{ (pred.confidence * 100) | round(1) }}%</span>
+                                </div>
+                                <div class="detection-bbox">
+                                    <small>BBox: [{{ "%.0f"|format(pred.bbox[0]) }}, {{ "%.0f"|format(pred.bbox[1]) }}, {{ "%.0f"|format(pred.bbox[2]) }}, {{ "%.0f"|format(pred.bbox[3]) }}]</small>
+                                </div>
+                                {% if disease_info and pred.class_name in disease_info and disease_info[pred.class_name].treatment %}
+                                <div class="detection-treatment">
+                                    <strong>Cách xử lý:</strong> {{ disease_info[pred.class_name].treatment[:100] }}...
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Disease Count Summary -->
+                        {% if detection_result.disease_counts %}
+                        <div class="disease-counts">
+                            <h4><i class="fas fa-chart-bar"></i> Tổng hợp bệnh</h4>
+                            {% for disease, count in detection_result.disease_counts.items() %}
+                            <div class="count-item">
+                                <span class="count-name">{{ disease_info[disease].name if disease_info and disease in disease_info else disease }}</span>
+                                <span class="count-badge" style="background: {{ detection_colors[disease] if disease in detection_colors else '#888' }}">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        {% else %}
+                        <div class="no-detections">
+                            <i class="fas fa-check-circle"></i>
+                            <p>Không phát hiện bệnh nào với ngưỡng tin cậy hiện tại.</p>
+                            <small>Thử giảm ngưỡng confidence để xem thêm kết quả.</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
                 {% else %}
                 <div class="no-result">
                     <i class="fas fa-leaf"></i>
                     <p>Tải lên ảnh lá sầu riêng để bắt đầu phân tích</p>
+                    <small id="mode-hint">Chọn chế độ Phân loại hoặc Phát hiện vị trí</small>
                 </div>
                 {% endif %}
             </div>
@@ -192,12 +295,12 @@
                 <div class="about-card">
                     <i class="fas fa-brain"></i>
                     <h3>Deep Learning</h3>
-                    <p>Sử dụng các mô hình CNN tiên tiến như ResNet, EfficientNet, MobileNetV3</p>
+                    <p>Sử dụng các mô hình CNN tiên tiến như ResNet, EfficientNet, MobileNetV3 và YOLOv8</p>
                 </div>
                 <div class="about-card">
-                    <i class="fas fa-database"></i>
-                    <h3>Dataset</h3>
-                    <p>Được huấn luyện trên hàng nghìn ảnh lá sầu riêng đa dạng</p>
+                    <i class="fas fa-crosshairs"></i>
+                    <h3>Object Detection</h3>
+                    <p>Phát hiện vị trí bệnh trên lá với bounding box sử dụng YOLOv8</p>
                 </div>
                 <div class="about-card">
                     <i class="fas fa-tachometer-alt"></i>
@@ -211,7 +314,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <p>© 2025 Durian Disease Detection - AI Project</p>
+            <p>Durian Disease Detection - AI Project</p>
             <p>Đồ án Trí Tuệ Nhân Tạo</p>
         </div>
     </footer>
@@ -229,6 +332,33 @@
         const previewImage = document.getElementById('preview-image');
         const removeBtn = document.getElementById('remove-btn');
         const submitBtn = document.getElementById('submit-btn');
+        const modeInput = document.getElementById('mode-input');
+        const clsSelector = document.getElementById('cls-selector');
+        const detSelector = document.getElementById('det-selector');
+        const confSelector = document.getElementById('conf-selector');
+        const confSlider = document.getElementById('conf_threshold');
+        const confValue = document.getElementById('conf-value');
+        const modeClassificationBtn = document.getElementById('mode-classification');
+        const modeDetectionBtn = document.getElementById('mode-detection');
+
+        // Mode toggle
+        function setMode(mode) {
+            modeInput.value = mode;
+            modeClassificationBtn.classList.toggle('active', mode === 'classification');
+            modeDetectionBtn.classList.toggle('active', mode === 'detection');
+            clsSelector.style.display = mode === 'classification' ? 'block' : 'none';
+            detSelector.style.display = mode === 'detection' ? 'block' : 'none';
+            confSelector.style.display = mode === 'detection' ? 'block' : 'none';
+            document.getElementById('mode-hint').textContent =
+                mode === 'detection' ? 'Phát hiện vị trí bệnh với bounding box' : 'Phân loại bệnh trên lá';
+        }
+
+        // Confidence slider
+        if (confSlider && confValue) {
+            confSlider.addEventListener('input', function() {
+                confValue.textContent = this.value;
+            });
+        }
 
         // Drag & Drop Events
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -296,7 +426,12 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
             submitBtn.disabled = true;
         });
+
+        // Initialize mode from server
+        const currentMode = modeInput ? modeInput.value : 'classification';
+        if (currentMode === 'detection') {
+            setMode('detection');
+        }
     </script>
 </body>
 </html>
-

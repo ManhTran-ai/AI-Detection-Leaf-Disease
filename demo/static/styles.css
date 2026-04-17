@@ -680,3 +680,267 @@ body {
 }
 
 
+/* =============================================================================
+   OBJECT DETECTION MODE STYLES
+   ============================================================================= */
+
+/* Mode Toggle */
+.mode-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: var(--bg-color);
+    padding: 4px;
+    border-radius: var(--radius-md);
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.mode-btn:hover {
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.mode-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.mode-btn.active:hover {
+    background: var(--primary-dark);
+    color: white;
+}
+
+/* Slider Container */
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.slider-container input[type="range"] {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border-color);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+
+.slider-container span {
+    min-width: 36px;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-align: right;
+}
+
+/* Detection Result Image */
+.detection-result {
+    position: relative;
+    border: 3px solid var(--primary-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.detection-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--primary-color);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: var(--shadow-md);
+}
+
+/* Detection Summary */
+.detection-summary {
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    margin-top: 16px;
+}
+
+.summary-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.summary-header i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.summary-header h3 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Detection List */
+.detection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detection-item {
+    background: white;
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    transition: all 0.3s;
+}
+
+.detection-item:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.detection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.detection-class {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detection-class i {
+    font-size: 1rem;
+}
+
+.detection-conf {
+    background: var(--bg-color);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.detection-bbox {
+    font-family: monospace;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+}
+
+.detection-treatment {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: var(--bg-color);
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    margin-top: 8px;
+}
+
+/* Disease Counts */
+.disease-counts {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px solid var(--border-color);
+}
+
+.disease-counts h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.count-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: white;
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+}
+
+.count-name {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.count-badge {
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+/* No Detections */
+.no-detections {
+    text-align: center;
+    padding: 32px;
+    color: var(--primary-color);
+}
+
+.no-detections i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.no-detections p {
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+.no-detections small {
+    color: var(--text-secondary);
+}
+
+/* Model Status Text */
+.model-status-ready {
+    color: var(--primary-color);
+    font-size: 0.8rem;
+}
+
+.model-status-not-ready {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
