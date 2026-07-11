@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from uuid import uuid4
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, redirect, render_template, request, url_for, session
 from werkzeug.utils import secure_filename
 
 from src.inference.predictor import Predictor
@@ -53,9 +53,9 @@ AVAILABLE_DETECTION_MODELS = {
         "description": "Mô hình nhẹ, tốc độ nhanh nhất",
     },
     "yolov8s": {
-        "display_name": "YOLOv8-Small (Can bằng)",
+        "display_name": "YOLOv8-Small (Cân bằng)",
         "checkpoint": "models/detection/yolov8s_disease/weights/best.pt",
-        "description": "Can bằng giữa tốc độ và độ chính xác",
+        "description": "Cân bằng giữa tốc độ và độ chính xác",
     },
     "yolov8m": {
         "display_name": "YOLOv8-Medium (Chính xác)",
@@ -71,9 +71,9 @@ AVAILABLE_SEGMENTATION_MODELS = {
         "description": "Instance Segmentation - Mô hình nhẹ, tốc độ nhanh",
     },
     "yolov8s-seg": {
-        "display_name": "YOLOv8s-Seg (Can bằng)",
+        "display_name": "YOLOv8s-Seg (Cân bằng)",
         "checkpoint": "models/segmentation/yolov8s_seg_disease/weights/best.pt",
-        "description": "Instance Segmentation - Can bằng giữa tốc độ và độ chính xác",
+        "description": "Instance Segmentation - Cân bằng giữa tốc độ và độ chính xác",
     },
     "yolov8m-seg": {
         "display_name": "YOLOv8m-Seg (Chính xác)",
@@ -128,6 +128,7 @@ UPLOAD_DIR = Path("demo/static/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "durian-disease-detection-secret-key-2024")
 _class_predictors = {}
 _detection_predictors = {}
 
@@ -262,113 +263,21 @@ def get_available_models_with_status():
 # Routes
 # =============================================================================
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET"])
 def index():
-    detection_mode = request.form.get("mode", request.args.get("mode", "classification"))
-    current_cls_model = request.form.get("cls_model", DEFAULT_MODEL) if request.method == "POST" else DEFAULT_MODEL
-    current_det_model = request.form.get("det_model", "yolov8n") if request.method == "POST" else "yolov8n"
-    current_seg_model = request.form.get("seg_model", "yolov8n-seg") if request.method == "POST" else "yolov8n-seg"
+    detection_mode = request.args.get("mode", session.get("last_mode", "classification"))
+    current_cls_model = request.args.get("cls_model", session.get("last_cls_model", DEFAULT_MODEL))
+    current_det_model = request.args.get("det_model", session.get("last_det_model", "yolov8n"))
+    current_seg_model = request.args.get("seg_model", session.get("last_seg_model", "yolov8n-seg"))
 
-    prediction = None
-    detection_result = None
-    segmentation_result = None
-    image_url = None
-    annotated_image_url = None
-    error = None
+    prediction = session.pop("prediction", None)
+    detection_result = session.pop("detection_result", None)
+    segmentation_result = session.pop("segmentation_result", None)
+    image_url = session.pop("image_url", None)
+    annotated_image_url = session.pop("annotated_image_url", None)
+    error = session.pop("error", None)
 
     available_cls_models, available_det_models, available_seg_models = get_available_models_with_status()
-
-    predictor = None
-    det_predictor = None
-    seg_predictor = None
-
-    if detection_mode == "detection":
-        try:
-            det_predictor = get_detection_predictor(current_det_model)
-        except FileNotFoundError as e:
-            error = str(e)
-    elif detection_mode == "segmentation":
-        try:
-            seg_predictor = get_segmentation_predictor(current_seg_model)
-        except FileNotFoundError as e:
-            error = str(e)
-    else:
-        try:
-            predictor = get_classification_predictor(current_cls_model)
-        except FileNotFoundError as e:
-            error = str(e)
-
-    if request.method == "POST" and not error:
-        file = request.files.get("image")
-        if not file or file.filename == "":
-            error = "Vui lòng chọn ảnh lá sầu riêng để phân tích."
-        else:
-            filename = secure_filename(file.filename)
-            saved_path = UPLOAD_DIR / f"{uuid4().hex}_{filename}"
-            file.save(saved_path)
-            image_url = url_for("static", filename=f"uploads/{saved_path.name}")
-
-            try:
-                if detection_mode == "segmentation" and seg_predictor:
-                    result = seg_predictor.predict(str(saved_path), return_image=True)
-
-                    predictions_list = result["predictions"]
-                    annotated_img = result["annotated_image"]
-
-                    if annotated_img is not None:
-                        annotated_name = f"seg_{uuid4().hex}_{filename}"
-                        annotated_path = UPLOAD_DIR / annotated_name
-                        annotated_bgr = cv2.cvtColor(annotated_img, cv2.COLOR_RGB2BGR)
-                        cv2.imwrite(str(annotated_path), annotated_bgr)
-                        annotated_image_url = url_for("static", filename=f"uploads/{annotated_name}")
-
-                    segmentation_result = {
-                        "num_detections": result["num_detections"],
-                        "predictions": predictions_list,
-                        "disease_counts": {},
-                        "total_area": sum(p.get("mask_area_pixels", 0) for p in predictions_list),
-                    }
-
-                    for pred in predictions_list:
-                        cls_name = pred["class_name"]
-                        segmentation_result["disease_counts"][cls_name] = (
-                            segmentation_result["disease_counts"].get(cls_name, 0) + 1
-                        )
-
-                elif detection_mode == "detection" and det_predictor:
-                    result = det_predictor.predict(str(saved_path), return_image=True)
-
-                    predictions_list = result["predictions"]
-                    annotated_img = result["annotated_image"]
-
-                    if annotated_img is not None:
-                        annotated_name = f"det_{uuid4().hex}_{filename}"
-                        annotated_path = UPLOAD_DIR / annotated_name
-                        cv2.imwrite(str(annotated_path), annotated_img)
-                        annotated_image_url = url_for("static", filename=f"uploads/{annotated_name}")
-
-                    detection_result = {
-                        "num_detections": result["num_detections"],
-                        "predictions": predictions_list,
-                        "disease_counts": {},
-                    }
-
-                    for pred in predictions_list:
-                        cls_name = pred["class_name"]
-                        detection_result["disease_counts"][cls_name] = (
-                            detection_result["disease_counts"].get(cls_name, 0) + 1
-                        )
-
-                elif detection_mode == "classification" and predictor:
-                    result = predictor.predict(str(saved_path))
-                    prediction = {
-                        "class": result["predicted_class"],
-                        "confidence": result["confidence"],
-                        "probabilities": result["probabilities"],
-                    }
-
-            except Exception as e:
-                error = f"Lỗi khi phân tích ảnh: {str(e)}"
 
     return render_template(
         "index.html",
@@ -388,6 +297,121 @@ def index():
         current_seg_model=current_seg_model,
         detection_mode=detection_mode,
     )
+
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    detection_mode = request.form.get("mode", "classification")
+    current_cls_model = request.form.get("cls_model", DEFAULT_MODEL)
+    current_det_model = request.form.get("det_model", "yolov8n")
+    current_seg_model = request.form.get("seg_model", "yolov8n-seg")
+
+    session["last_mode"] = detection_mode
+    session["last_cls_model"] = current_cls_model
+    session["last_det_model"] = current_det_model
+    session["last_seg_model"] = current_seg_model
+
+    file = request.files.get("image")
+    if not file or file.filename == "":
+        session["error"] = "Vui lòng chọn ảnh lá sầu riêng để phân tích."
+        return redirect(url_for("index", mode=detection_mode))
+
+    filename = secure_filename(file.filename)
+    saved_path = UPLOAD_DIR / f"{uuid4().hex}_{filename}"
+    file.save(saved_path)
+    image_url = url_for("static", filename=f"uploads/{saved_path.name}")
+
+    predictor = None
+    det_predictor = None
+    seg_predictor = None
+    annotated_image_url = None
+    prediction = None
+    detection_result = None
+    segmentation_result = None
+
+    try:
+        if detection_mode == "detection":
+            det_predictor = get_detection_predictor(current_det_model)
+        elif detection_mode == "segmentation":
+            seg_predictor = get_segmentation_predictor(current_seg_model)
+        else:
+            predictor = get_classification_predictor(current_cls_model)
+    except FileNotFoundError as e:
+        session["error"] = str(e)
+        return redirect(url_for("index", mode=detection_mode))
+
+    try:
+        if detection_mode == "segmentation" and seg_predictor:
+            result = seg_predictor.predict(str(saved_path), return_image=True)
+            predictions_list = result["predictions"]
+            annotated_img = result["annotated_image"]
+
+            if annotated_img is not None:
+                annotated_name = f"seg_{uuid4().hex}_{filename}"
+                annotated_path = UPLOAD_DIR / annotated_name
+                annotated_bgr = cv2.cvtColor(annotated_img, cv2.COLOR_RGB2BGR)
+                cv2.imwrite(str(annotated_path), annotated_bgr)
+                annotated_image_url = url_for("static", filename=f"uploads/{annotated_name}")
+
+            segmentation_result = {
+                "num_detections": result["num_detections"],
+                "predictions": predictions_list,
+                "disease_counts": {},
+                "total_area": sum(p.get("mask_area_pixels", 0) for p in predictions_list),
+            }
+
+            for pred in predictions_list:
+                cls_name = pred["class_name"]
+                segmentation_result["disease_counts"][cls_name] = (
+                    segmentation_result["disease_counts"].get(cls_name, 0) + 1
+                )
+
+            session["segmentation_result"] = segmentation_result
+
+        elif detection_mode == "detection" and det_predictor:
+            result = det_predictor.predict(str(saved_path), return_image=True)
+            predictions_list = result["predictions"]
+            annotated_img = result["annotated_image"]
+
+            if annotated_img is not None:
+                annotated_name = f"det_{uuid4().hex}_{filename}"
+                annotated_path = UPLOAD_DIR / annotated_name
+                cv2.imwrite(str(annotated_path), annotated_img)
+                annotated_image_url = url_for("static", filename=f"uploads/{annotated_name}")
+
+            detection_result = {
+                "num_detections": result["num_detections"],
+                "predictions": predictions_list,
+                "disease_counts": {},
+            }
+
+            for pred in predictions_list:
+                cls_name = pred["class_name"]
+                detection_result["disease_counts"][cls_name] = (
+                    detection_result["disease_counts"].get(cls_name, 0) + 1
+                )
+
+            session["detection_result"] = detection_result
+
+        elif detection_mode == "classification" and predictor:
+            result = predictor.predict(str(saved_path))
+            prediction = {
+                "class": result["predicted_class"],
+                "confidence": result["confidence"],
+                "probabilities": result["probabilities"],
+            }
+            session["prediction"] = prediction
+
+        session["image_url"] = image_url
+        session["annotated_image_url"] = annotated_image_url
+
+    except Exception as e:
+        session["error"] = f"Lỗi khi phân tích ảnh: {str(e)}"
+        session["image_url"] = image_url
+        session["annotated_image_url"] = None
+        return redirect(url_for("index", mode=detection_mode))
+
+    return redirect(url_for("index", mode=detection_mode))
 
 
 # =============================================================================

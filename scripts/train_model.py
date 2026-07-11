@@ -31,7 +31,11 @@ def main():
 
     train_loader, val_loader, test_loader = create_dataloaders(config)
     model, optimizer, criterion = build_model_components(config, device)
-    scheduler = create_scheduler(optimizer, config.get("scheduler", {}))
+    scheduler = create_scheduler(
+        optimizer,
+        config.get("scheduler", {}),
+        num_epochs=config["training"]["num_epochs"],
+    )
 
     trainer = Trainer(
         model=model,

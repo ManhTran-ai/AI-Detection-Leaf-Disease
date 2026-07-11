@@ -60,7 +60,7 @@
             <div class="upload-section">
                 <h2><i class="fas fa-cloud-upload-alt"></i> Tải lên ảnh lá</h2>
 
-                <form method="POST" enctype="multipart/form-data" id="upload-form">
+                <form method="POST" enctype="multipart/form-data" id="upload-form" action="{{ url_for('predict') }}">
                     <!-- Mode Toggle -->
                     <div class="mode-toggle">
                         <button type="button" class="mode-btn {% if detection_mode == 'classification' %}active{% endif %}" id="mode-classification" onclick="setMode('classification')">
@@ -75,25 +75,37 @@
                     <!-- Classification Model Selector -->
                     <div class="model-selector" id="cls-selector" style="{% if detection_mode == 'detection' %}display:none{% endif %}">
                         <label for="cls_model">Chọn Model Phân loại:</label>
-                        <select name="cls_model" id="cls_model">
+                        <select name="cls_model" id="cls_model" onchange="handleModelChange(this); checkModelAvailability('cls', this)">
                             {% for model_name, model_info in available_cls_models.items() %}
-                            <option value="{{ model_name }}" {% if model_name == current_cls_model %}selected{% endif %}>
-                                {{ model_info.display_name }} {{ model_info.status_text }}
+                            <option value="{{ model_name }}" data-available="{{ model_info.available }}" {% if model_name == current_cls_model %}selected{% endif %} class="{% if not model_info.available %}unavailable{% endif %}">
+                                {{ model_info.display_name }}
                             </option>
                             {% endfor %}
                         </select>
+                        {% if current_cls_model in available_cls_models and not available_cls_models[current_cls_model].available %}
+                        <div class="model-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Model này chưa được train. Kết quả có thể không chính xác.
+                        </div>
+                        {% endif %}
                     </div>
 
                     <!-- Detection Model Selector -->
                     <div class="model-selector" id="det-selector" style="{% if detection_mode == 'classification' %}display:none{% endif %}">
                         <label for="det_model">Chọn Model Detection:</label>
-                        <select name="det_model" id="det_model">
+                        <select name="det_model" id="det_model" onchange="handleModelChange(this); checkModelAvailability('det', this)">
                             {% for model_name, model_info in available_det_models.items() %}
-                            <option value="{{ model_name }}" {% if model_name == current_det_model %}selected{% endif %}>
-                                {{ model_info.display_name }} {{ model_info.status_text }}
+                            <option value="{{ model_name }}" data-available="{{ model_info.available }}" {% if model_name == current_det_model %}selected{% endif %} class="{% if not model_info.available %}unavailable{% endif %}">
+                                {{ model_info.display_name }}
                             </option>
                             {% endfor %}
                         </select>
+                        {% if current_det_model in available_det_models and not available_det_models[current_det_model].available %}
+                        <div class="model-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Model này chưa được train. Vui lòng train model trước khi sử dụng.
+                        </div>
+                        {% endif %}
                     </div>
 
                     <!-- Confidence Threshold (Detection only) -->
@@ -113,7 +125,7 @@
                             <span>hoặc</span>
                             <label for="image" class="browse-btn">Chọn tệp</label>
                         </div>
-                        <input type="file" id="image" name="image" accept="image/*" required hidden>
+                        <input type="file" id="image" name="image" accept="image/*" hidden>
                     </div>
 
                     <!-- Preview -->
@@ -352,6 +364,32 @@
             document.getElementById('mode-hint').textContent =
                 mode === 'detection' ? 'Phát hiện vị trí bệnh với bounding box' : 'Phân loại bệnh trên lá';
         }
+
+        // Auto-submit form when model is changed (only if image is already uploaded)
+        function handleModelChange(select) {
+            if (previewContainer.style.display !== 'none' && previewImage.src) {
+                document.getElementById('upload-form').submit();
+            }
+        }
+
+        // Check if selected model is available and show warning
+        function checkModelAvailability(type, select) {
+            const selectedOption = select.options[select.selectedIndex];
+            const isAvailable = selectedOption.getAttribute('data-available') === 'True';
+
+            if (!isAvailable) {
+                alert('Model này chưa được train. Vui lòng chọn model khác hoặc train model trước.');
+            }
+        }
+
+        // Initialize model availability check on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const clsModelSelect = document.getElementById('cls_model');
+            const detModelSelect = document.getElementById('det_model');
+
+            if (clsModelSelect) checkModelAvailability('cls', clsModelSelect);
+            if (detModelSelect) checkModelAvailability('det', detModelSelect);
+        });
 
         // Confidence slider
         if (confSlider && confValue) {

@@ -17,7 +17,7 @@ def save_checkpoint(state: Dict[str, Any], checkpoint_dir: str, filename: str = 
 
 
 def load_checkpoint(model: torch.nn.Module, checkpoint_path: str, device: torch.device) -> torch.nn.Module:
-    checkpoint = torch.load(checkpoint_path, map_location=device)
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint["model_state_dict"])
     return model
 

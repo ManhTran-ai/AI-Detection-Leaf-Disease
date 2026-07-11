@@ -211,6 +211,16 @@ class MobileNetV3Large(nn.Module):
         """
         return self.features[-1]
 
+    def get_feature_dim(self) -> int:
+        """Return the feature dimension after GlobalAveragePooling."""
+        return self.classifier[0].in_features
+
+    def replace_classifier_with_identity(self) -> None:
+        """Remove classifier head for feature extraction mode."""
+        in_features = self.classifier[0].in_features
+        self.classifier = nn.Identity()
+        self._feature_dim = in_features
+
 
 class MobileNetV3Small(nn.Module):
     """MobileNetV3-Small wrapper class with fine-tuning utilities.
@@ -321,4 +331,22 @@ def get_mobilenetv3_info(name: str = "mobilenetv3_large") -> dict:
         },
     }
     return info.get(name, {})
+
+
+def get_mobilenetv3_feature_dim(name: str = "mobilenetv3_large") -> int:
+    """Return the feature dimension (in_features of first classifier linear) for a MobileNetV3 variant."""
+    feat_dims = {"mobilenetv3_large": 960, "mobilenetv3_small": 576}
+    return feat_dims.get(name, 960)
+
+
+def replace_mobilenetv3_classifier_with_identity(model: nn.Module) -> nn.Module:
+    """Remove the classifier head from a MobileNetV3 model for feature extraction.
+
+    After calling this, forward pass returns features from GlobalAveragePooling
+    instead of class logits. The feature dimension matches get_mobilenetv3_feature_dim().
+    """
+    in_features = model.classifier[0].in_features
+    model.classifier = nn.Identity()
+    model._feature_dim = in_features
+    return model
 

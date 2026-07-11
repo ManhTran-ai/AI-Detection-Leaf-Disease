@@ -944,3 +944,31 @@ body {
     font-size: 0.8rem;
 }
 
+/* Model Warning */
+.model-warning {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #fff7ed;
+    border: 1px solid #fbbf24;
+    border-radius: var(--radius-sm);
+    color: #92400e;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.model-warning i {
+    color: #f59e0b;
+}
+
+/* Unavailable Option */
+select option.unavailable {
+    color: #999;
+    background: #f5f5f5;
+}
+
+select option.unavailable::after {
+    content: " (chưa train)";
+}
+

@@ -205,6 +205,16 @@ class EfficientNetB0(nn.Module):
         """
         return self.features[-1]
 
+    def get_feature_dim(self) -> int:
+        """Return the feature dimension after GlobalAveragePooling."""
+        return self.classifier[1].in_features
+
+    def replace_classifier_with_identity(self) -> None:
+        """Remove classifier head for feature extraction mode."""
+        in_features = self.classifier[1].in_features
+        self.classifier = nn.Identity()
+        self._feature_dim = in_features
+
 
 def get_efficientnet_info(name: str = "efficientnet_b0") -> dict:
     """Get information about EfficientNet architecture.
@@ -239,4 +249,22 @@ def get_efficientnet_info(name: str = "efficientnet_b0") -> dict:
         },
     }
     return info.get(name, {})
+
+
+def get_efficientnet_feature_dim(name: str = "efficientnet_b0") -> int:
+    """Return the feature dimension (in_features of classifier) for an EfficientNet variant."""
+    feat_dims = {"efficientnet_b0": 1280, "efficientnet_b1": 1280, "efficientnet_b2": 1408}
+    return feat_dims.get(name, 1280)
+
+
+def replace_efficientnet_classifier_with_identity(model: nn.Module) -> nn.Module:
+    """Remove the classifier head from an EfficientNet model for feature extraction.
+
+    After calling this, forward pass returns features from GlobalAveragePooling
+    instead of class logits. The feature dimension matches get_efficientnet_feature_dim().
+    """
+    in_features = model.classifier[1].in_features
+    model.classifier = nn.Identity()
+    model._feature_dim = in_features
+    return model
 

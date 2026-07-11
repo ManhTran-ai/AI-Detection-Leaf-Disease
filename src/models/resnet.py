@@ -25,3 +25,19 @@ def create_resnet(name: ResNetVariant, num_classes: int, dropout: float = 0.3, p
     return model
 
 
+def get_resnet_feature_dim(name: ResNetVariant) -> int:
+    """Return the feature dimension (in_features of fc layer) for a ResNet variant."""
+    feat_dims = {"resnet18": 512, "resnet34": 512, "resnet50": 2048}
+    return feat_dims.get(name, 512)
+
+
+def replace_resnet_classifier_with_identity(model: nn.Module) -> nn.Module:
+    """Remove the classifier head from a ResNet model for feature extraction.
+
+    After calling this, forward pass returns features from GlobalAveragePooling
+    instead of class logits. The feature dimension matches get_resnet_feature_dim().
+    """
+    model.fc = nn.Identity()
+    return model
+
+

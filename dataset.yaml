@@ -1,0 +1,8 @@
+path: /kaggle/working/data/detect_yolo
+train: images/train
+val: images/val
+test: images/test
+nc: 2
+names:
+  0: ALGAL_LEAF_SPOT
+  1: LEAF_BLIGHT

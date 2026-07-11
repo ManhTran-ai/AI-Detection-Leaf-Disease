@@ -197,6 +197,7 @@ class CNNFeatureExtractor:
             checkpoint = torch.load(
                 self.model_info.checkpoint_path,
                 map_location=self.device,
+                weights_only=False,
             )
             model.load_state_dict(checkpoint["model_state_dict"])
             logger.info(f"Loaded checkpoint: {self.model_info.checkpoint_path}")

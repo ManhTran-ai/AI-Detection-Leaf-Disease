@@ -9,11 +9,15 @@ from albumentations.pytorch import ToTensorV2
 
 
 def _build_inference_transform(image_size: int, mean, std, pad_if_needed: bool = True):
-    resize_steps = [A.LongestMaxSize(image_size)]
     if pad_if_needed:
-        resize_steps.append(A.PadIfNeeded(image_size, image_size, border_mode=cv2.BORDER_CONSTANT, value=0))
+        resize_steps = [
+            A.LongestMaxSize(image_size),
+            A.PadIfNeeded(image_size, image_size, border_mode=cv2.BORDER_CONSTANT, value=0),
+        ]
     else:
-        resize_steps = [A.Resize(image_size, image_size)]
+        resize_steps = [
+            A.Resize(image_size, image_size),
+        ]
 
     return A.Compose(
         [
